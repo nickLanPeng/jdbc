@@ -1,0 +1,263 @@
+
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+/**
+*
+*辅助类主要作用是1安装驱动2获取连接数据库对象以及关闭相应的流
+*
+*
+*/
+public class DBHelper {
+private static final String DRIVER = "oracle.jdbc.driver.OracleDriver";
+private static final String URL = "jdbc:oracle:thin:@localhost:1521:XE";
+private static final String USER = "nick.lan";
+private static final String PWD = "Infosys@123";
+// 安装驱动
+static{
+	try {
+		Class.forName(DRIVER);
+	} catch (ClassNotFoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+}
+// 获取连接数据库对象con
+public static Connection getConnection(){
+	Connection con = null;
+	try {
+		con = DriverManager.getConnection(URL,USER,PWD);
+	} catch (SQLException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	return con;	
+}
+// 关闭流con,pstl,res
+public static void close(Connection con,PreparedStatement pstl,ResultSet res){
+	if(con != null && pstl != null && res != null){
+		try {
+			con.close();
+			pstl.close();
+			res.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}	
+	}
+	// 关闭流con, pstl
+	public static void close(Connection con,PreparedStatement pstl){
+		if(con != null && pstl != null){
+			try {
+				con.close();
+				pstl.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}	
+}
+
+}
+
+
+// 添加数据
+public boolean addInfo(User user) {
+	Connection con = dbhelper.getConnection();
+	boolean flag = false;
+	//插入
+	String sql = "insert into personal_information values(?,?,?,?,?)";
+	PreparedStatement pstmt = null;
+	 try {
+	        pstmt = (PreparedStatement) con.prepareStatement(sql);
+	        pstmt.setString(1, user.getName());//name
+	        pstmt.setString(2, user.getID());//ID
+	        pstmt.setInt(3, user.getEMP_num());//EMP
+	        pstmt.setString(4, user.getGender());//GEN
+	        pstmt.setString(5, user.getPWD());//PWD
+	        int i = pstmt.executeUpdate();   
+	       // 如果数据更新成功，则返回大于1的数值，否则返回0
+	        if (i > 0) {
+	        	flag = true;
+			}
+	        pstmt.close();
+	        con.close();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	
+	return flag;
+  }
+  
+  // 删除数据
+  
+  public class AdminDeleteDao {
+ public boolean DeleteAll(){
+	 DBHelper dbHelper = new DBHelper();
+	 Connection con = dbHelper.getConnection();
+	 PreparedStatement pstl = null;
+	 boolean flag = false;
+	 String sql= "delete from personal_information";
+	 try {
+		pstl = con.prepareStatement(sql);
+		flag=pstl.execute();
+	} catch (SQLException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	 return flag;
+	 
+ }
+}
+// 查询数据
+
+
+public class queryDao{
+public User query(int EMP_num){
+	Connection con = null;
+	PreparedStatement pstl = null;
+	ResultSet res = null;
+	con = DBHelper.getConnection();
+	User use = null;
+	String sql = "select * from personal_information where EMP_num = ?";
+	try {
+		pstl = con.prepareStatement(sql);	
+		pstl.setInt(1, EMP_num);
+		res = pstl.executeQuery();	
+		if(res.next()){
+		String name = res.getString(1);
+		String pwd = res.getString(2);
+		int EMP = res.getInt(3);
+		String gender = res.getString(4);
+		String id= res.getString(5);
+		 use = new User(name,pwd,EMP,gender,id);
+		}
+	} catch (SQLException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} 
+		DBHelper.close(con, pstl, res);
+		return use;		
+}
+public boolean identifyEMP(int EMP_num){
+	DBHelper dbHelper = new DBHelper();
+	Connection con = dbHelper.getConnection();
+	PreparedStatement pstl = null;
+	ResultSet res = null;
+	boolean flag = false;
+	String sql = "select * from personal_information where EMP_num = ?";
+	try {
+		pstl = con.prepareStatement(sql);
+		pstl.setInt(1, EMP_num);
+		res = pstl.executeQuery();
+		if(res.next()){
+			flag = true;
+			con.close();
+			pstl.close();
+			res.close();
+		}
+	} catch (SQLException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	return flag;
+}
+}
+// 修改数据
+
+
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import com.infy.avery.DBHelper.DBHelper;
+import com.infy.avery.entity.Update;
+
+import oracle.net.ns.SessionAtts;
+
+public class UpdateDao {
+public boolean update(int EMP_num,String name,String ID,String gender){
+DBHelper dbHelper = new DBHelper();
+Connection con = DBHelper.getConnection();
+PreparedStatement pstl = null;
+boolean flag = false;
+String sql = "update personal_information set name=?,ID=?,gender=? where EMP_num=?";
+ try {
+	pstl = con.prepareStatement(sql);
+	pstl.setString(1, name);
+	pstl.setString(2, ID);
+	pstl.setString(3, gender);
+	pstl.setInt(4, EMP_num);
+	int count = pstl.executeUpdate();
+	if(count>0){
+		flag = true;
+	}else{
+		flag = false;
+	}
+} catch (SQLException e) {
+	// TODO Auto-generated catch block
+	e.printStackTrace();
+}
+ return flag;
+	}
+}
+
+/**
+*
+*servlet获取表单数据及session的创建
+*/
+
+/**
+ * Servlet implementation class login_servlet
+ */
+public class login_servlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public login_servlet() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		response.getWriter().append("Served at: ").append(request.getContextPath());
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String PWD = request.getParameter("password");
+		int EMP_num = Integer.valueOf(request.getParameter("EMP_num"));
+		LoginDao dao = new LoginDao();
+	   if(dao.loginDao(EMP_num,PWD)!=null){
+		   HttpSession session = request.getSession();
+		   session.setAttribute("name1",dao.loginDao(EMP_num, PWD).getName());
+		   session.setAttribute("ID1", dao.loginDao(EMP_num, PWD).getID());
+		   session.setAttribute("EMP1", dao.loginDao(EMP_num, PWD).getEMP_num());
+		   session.setAttribute("gender1", dao.loginDao(EMP_num, PWD).getGender());
+		   session.setAttribute("PWD1", dao.loginDao(EMP_num, PWD).getPWD());
+		   RequestDispatcher dispatcher = request.getRequestDispatcher("login_success.jsp");
+		  dispatcher.forward(request, response);
+	   }else{
+		   
+		   response.sendRedirect("login_failure.jsp");
+	   }
+	   
+	}
+
+}
+
